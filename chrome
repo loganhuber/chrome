@@ -128,6 +128,19 @@ openBookMark() {
     open -na "Google Chrome" "${URL}"
 }
 
+search() {
+    shift 1
+    url="https://google.com/search?q="
+    query=""
+
+    for item in "${@}"; do
+        query+="$item+"
+    done
+
+    echo "Opening Chrome..."
+    open -na "Google Chrome" "${url}${query%?}"
+}
+
 
 main() {
 
@@ -144,6 +157,9 @@ main() {
         -h | --help )
             help
             return 0
+        ;;
+        -q | --query )
+            search $@
         ;;
         -b | --bookmark )
             bookmark $2 $3
