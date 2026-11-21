@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+
+TEMP=~/bin/.chromebmks.txt
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+
+help() {
+    cat << EOF
+    
+    Use this tool to quickly open the browser from your terminal.
+
+        Usage: chrome [OPTIONS]
+
+Default/No Arguments ____________ Opens your browser at the homepage
+
+*KEY* ___________________________ Opens the browser to the bookmarked page
+
+-b | --bookmark _________________ Takes two positional arguments. This sets the
+                                  key and the URL you'd like to bookmark. The URL 
+                                  must include the protocal
+
+-r | --remove ___________________ Takes a key you would like to remove from the 
+                                  bookmarks list
+
+-l | --list _____________________ Lists current bookmarks
+
+-h | --help _____________________ Opens help page
+
+EOF
+}
+
+validateURL() {
+    URL=$1
+    valid=(http:// https:// localhost)
+
+    for string in "${valid[@]}"; do
+        if [[ "$URL" == *"${string}"* ]]; then
+            return 0
+        fi
+    done
+
+    return -1
+}
+
+aintFile() {
+    if [-f "$PWD/$TEMP"]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+bookmark() {
+
+    if ! [[ -n $1 && $2 ]]; then
+        printf "${RED}Error:${NC} Two arguments required. -h for help\n"
+        return -1
+    fi
+
+    if ! validateURL $2; then
+        printf "${RED}Error:${NC} URL must contain protocal\n"
+        return -1
+    fi
+
+    if isBookmarked $1; then
+        printf "${RED}Key already in use${NC}\n"
+        printf "Remove the bookmark or pick a different key\n"
+        return -1
+    fi
+
+    echo "$1=$2" >> $TEMP
+    printf "${YELLOW}Bookmarked:${NC} $1 -> $2\n"
+    return 0
+}
+
+isBookmarked() {
+    local KEY=$1
+
+    while IFS= read -r line; do
+        if [[ ${line%%=*} == $KEY ]]; then
+            return 0
+        fi
+    done < $TEMP
+
+    return -1
+}
+
+removeBookmark() {
+    local key=$1
+    local index=0
+
+    while IFS= read -r line; do
+        ((index++))
+        if [[ ${line%%=*} == $key ]]; then
+            printf "${RED}Removed${NC} $line\n"
+            sed -i "" "${index}d" $TEMP
+            return 0
+        fi
+    done < $TEMP
+
+    echo "Key not found"
+    return 1
+}
+
+listBookmarks() {
+    while IFS= read -r line; do
+        echo $line
+    done < $TEMP
+}
+
+openBookMark() {
+    key=$1
+    string=""
+    while IFS= read -r line; do
+        if [[ ${line%%=*} == $key ]]; then
+            string=$line
+        fi
+    done < $TEMP
+    
+    if [[ $string == "" ]]; then
+        printf "${RED}Key not found${NC}\n"
+        return -1
+    fi
+
+    URL="${string#*=}"
+    open -na "Google Chrome" "${URL}"
+}
+
+
+main() {
+
+    if [ $# -eq 0 ]; then
+        open -na "Google Chrome"
+        return 0
+    fi
+
+    if [ aintFile ]; then
+        touch $TEMP
+    fi
+
+    case $1 in
+        -h | --help )
+            help
+            return 0
+        ;;
+        -b | --bookmark )
+            bookmark $2 $3
+        ;;
+        -rm | --remove ) 
+            removeBookmark $2
+            return 0
+        ;;
+        -l | --list ) 
+            listBookmarks
+        ;;
+        -v ) 
+            validateURL $2
+        ;;
+        * )
+            if [[ $1 ]]; then
+                openBookMark $1
+            fi
+        ;;
+    esac
+}
+
+main $@
