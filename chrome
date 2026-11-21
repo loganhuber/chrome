@@ -26,7 +26,11 @@ Default/No Arguments ____________ Opens your browser at the homepage
 
 -l | --list _____________________ Lists current bookmarks
 
+-q | --query ____________________ Accepts a string and google searches it.
+
 -h | --help _____________________ Opens help page
+
+
 
 EOF
 }
