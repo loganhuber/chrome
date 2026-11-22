@@ -16,8 +16,8 @@ help() {
 
 Default/No Arguments ____________ Opens your browser at the homepage
 
--i | --incognito ________________ Opens browser in incognito mode. Flag must be
-                                  used before any other flag
+-i | --incognito ________________ Opens browser in incognito mode. Must be the 
+                                  first flag passed.
 
 *KEY* ___________________________ Opens the browser to the bookmarked page
 
@@ -102,14 +102,23 @@ removeBookmark() {
     while IFS= read -r line; do
         ((index++))
         if [[ ${line%%=*} == $key ]]; then
-            printf "${RED}Removed${NC} $line\n"
             sed -i "" "${index}d" $TEMP
             return 0
         fi
     done < $TEMP
 
     echo "Key not found"
-    return 1
+    exit 1
+}
+
+replaceBookmark() {
+    local key=$1
+    local url=$2
+    local index=0
+
+    if removeBookmark $key $url; then
+        bookmark $key $url
+    fi
 }
 
 listBookmarks() {
@@ -199,13 +208,13 @@ main() {
         ;;
         -rm | --remove ) 
             removeBookmark $2
-            return 0
+            printf "${RED}Removed${NC} $line\n"
         ;;
         -l | --list ) 
             listBookmarks
         ;;
-        -v ) 
-            validateURL $2
+        -rp | --replace ) 
+            replaceBookmark $1 $2 
         ;;
         * )
             if [[ $1 ]]; then
