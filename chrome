@@ -4,6 +4,7 @@ TEMP=~/bin/.chromebmks.txt
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
+INCOGNITO=1
 
 
 help() {
@@ -129,7 +130,11 @@ openBookMark() {
     fi
 
     URL="${string#*=}"
-    open -na "Google Chrome" "${URL}"
+    if [ $INCOGNITO = 0 ]; then
+        open -na "Google Chrome" --args --incognito "${URL}"
+    else
+        open -na "Google Chrome" "${URL}"
+    fi
 }
 
 search() {
@@ -140,9 +145,15 @@ search() {
     for item in "${@}"; do
         query+="$item+"
     done
-
     echo "Opening Chrome..."
-    open -na "Google Chrome" "${url}${query%?}"
+    if [ $INCOGNITO = 0 ]; then
+        echo yep
+        open -na "Google Chrome" --args --incognito "${url}${query%?}"
+
+    else 
+        open -na "Google Chrome" "${url}${query%?}"
+        echo nope
+    fi
 }
 
 
@@ -155,6 +166,13 @@ main() {
 
     if [ aintFile ]; then
         touch $TEMP
+    fi
+
+    # has to be done outside of the switch
+    # my bash version is too old for a fall through switch case
+    if [[ "$1" = "-i" || "$1" = "--incognito" ]]; then
+        INCOGNITO=0
+        shift 1
     fi
 
     case $1 in
