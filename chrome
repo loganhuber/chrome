@@ -16,6 +16,9 @@ help() {
 
 Default/No Arguments ____________ Opens your browser at the homepage
 
+-i | --incognito ________________ Opens browser in incognito mode. Flag must be
+                                  used before any other flag
+
 *KEY* ___________________________ Opens the browser to the bookmarked page
 
 -b | --bookmark _________________ Takes two positional arguments. This sets the
@@ -159,8 +162,22 @@ search() {
 
 main() {
 
+    # has to be done outside of the switch
+    # my bash version is too old for a fall through switch case
+    if [[ "$1" = "-i" || "$1" = "--incognito" ]]; then
+        INCOGNITO=0
+        shift 1
+    fi
+
     if [ $# -eq 0 ]; then
+        case $INCOGNITO in
+        1 ) 
         open -na "Google Chrome"
+        ;;
+        0 )
+        open -na "Google Chrome" --args --incognito
+        ;;
+        esac
         return 0
     fi
 
@@ -168,12 +185,6 @@ main() {
         touch $TEMP
     fi
 
-    # has to be done outside of the switch
-    # my bash version is too old for a fall through switch case
-    if [[ "$1" = "-i" || "$1" = "--incognito" ]]; then
-        INCOGNITO=0
-        shift 1
-    fi
 
     case $1 in
         -h | --help )
