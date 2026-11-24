@@ -64,23 +64,21 @@ bookmark() {
 
     if ! [[ -n $1 && $2 ]]; then
         printf "${RED}Error:${NC} Two arguments required. -h for help\n"
-        return -1
+        exit 1
     fi
 
     if ! validateURL $2; then
         printf "${RED}Error:${NC} URL must contain protocal\n"
-        return -1
+        exit 1
     fi
 
     if isBookmarked $1; then
         printf "${RED}Key already in use${NC}\n"
         printf "Remove the bookmark or pick a different key\n"
-        return -1
+        exit 1
     fi
 
     echo "$1=$2" >> $TEMP
-    printf "${YELLOW}Bookmarked:${NC} $1 -> $2\n"
-    return 0
 }
 
 isBookmarked() {
@@ -98,7 +96,7 @@ isBookmarked() {
 removeBookmark() {
     local key=$1
     local index=0
-
+    
     while IFS= read -r line; do
         ((index++))
         if [[ ${line%%=*} == $key ]]; then
@@ -106,7 +104,6 @@ removeBookmark() {
             return 0
         fi
     done < $TEMP
-
     echo "Key not found"
     exit 1
 }
@@ -115,10 +112,8 @@ replaceBookmark() {
     local key=$1
     local url=$2
     local index=0
-
-    if removeBookmark $key $url; then
-        bookmark $key $url
-    fi
+    removeBookmark $key $url
+    bookmark $key $url
 }
 
 listBookmarks() {
@@ -159,12 +154,10 @@ search() {
     done
     echo "Opening Chrome..."
     if [ $INCOGNITO = 0 ]; then
-        echo yep
         open -na "Google Chrome" --args --incognito "${url}${query%?}"
 
     else 
         open -na "Google Chrome" "${url}${query%?}"
-        echo nope
     fi
 }
 
@@ -187,7 +180,7 @@ main() {
         open -na "Google Chrome" --args --incognito
         ;;
         esac
-        return 0
+        exit 0
     fi
 
     if [ aintFile ]; then
@@ -198,13 +191,14 @@ main() {
     case $1 in
         -h | --help )
             help
-            return 0
+            exit 0
         ;;
         -q | --query )
             search $@
         ;;
         -b | --bookmark )
             bookmark $2 $3
+            printf "${YELLOW}Bookmarked:${NC} $2 -> $3\n"
         ;;
         -rm | --remove ) 
             removeBookmark $2
@@ -214,7 +208,8 @@ main() {
             listBookmarks
         ;;
         -rp | --replace ) 
-            replaceBookmark $1 $2 
+            replaceBookmark $2 $3
+            printf "${YELLOW}Key Updated: ${NC} $2 -> $3\n"
         ;;
         * )
             if [[ $1 ]]; then
